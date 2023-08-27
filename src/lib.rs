@@ -283,7 +283,3 @@ pub fn compute_winner(votes: &[Vote]) -> String {
     // No winner = ""
     winner.map(|w|votes[w.idx].voter_id.clone()).unwrap_or_default()
 }
-
-fn main() {
-    println!("Hello, world!");
-}
