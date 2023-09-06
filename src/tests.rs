@@ -1,11 +1,10 @@
-use std::sync::atomic::AtomicU32;
 
 use crate::{Vote, compute_winner};
 
 #[derive(Default)]
 struct Votes {
     v: Vec<Vote>,
-    next_voter_id: AtomicU32,
+    next_voter_id: u32,
     test_name: String,
 }
 impl Votes {
@@ -31,14 +30,17 @@ impl Votes {
     }
     fn votes(&mut self, vote_for: &str, num_votes: u64) {
         self.v.push(Vote{
-            voter_id: format!("voter#{}", self.next_voter_id.load(std::sync::atomic::Ordering::Relaxed)),
-            vote_for: vote_for.into(),
+            voter_id: format!("voter#{}", self.next_voter_id),
+            vote_for: format!("{}/{}", self.test_name, vote_for),
             number_of_votes: num_votes,
             willing_candidate: false,
         });
+        self.next_voter_id += 1;
     }
     fn expect_win(&self, winner: &str) {
-        let res = compute_winner(&self.v);
+        println!("Computing winner for: {}", self.test_name);
+        let mut is = crate::logging_introspector::new();
+        let res = compute_winner(&self.v, &mut is);
         if res == "" {
             assert!(winner == "");
         } else {
@@ -72,8 +74,32 @@ fn test_alice_bob_charlie() {
     let mut v = Votes::new("test_alice_bob_charlie");
     v.candidate("Alice", "Bob");
     v.candidate("Bob", "Alice");
-    v.candidate("Charlie", "Charlie");
+    v.candidate("Charlie", "Alice");
     v.votes("Bob", 2);
     v.votes("Charlie", 4);
     v.expect_win("Alice");
+}
+
+#[test]
+fn charlie_is_patron() {
+    let mut v = Votes::new("charlie_is_patron");
+    v.candidate("Alice", "Bob");
+    v.candidate("Bob", "Alice");
+    v.candidate("Charlie", "Alice");
+    v.votes("Bob", 1); //  bob only has 1 vote, now Alice only has 3 votes
+    v.votes("Charlie", 4);
+    v.expect_win("Charlie");
+}
+
+#[test]
+fn ernist_is_patron() {
+    let mut v = Votes::new("ernist_is_patron");
+    v.candidate("Alice", "Bob");
+    v.candidate("Bob", "Alice");
+    v.candidate("Charlie", "Alice");
+    v.candidate("Dave", "Charlie");
+    v.candidate("Ernist", "Dave");
+    v.votes("Bob", 1); //  bob only has 1 vote, now Alice only has 3 votes
+    v.votes("Ernist", 4);
+    v.expect_win("Ernist");
 }
