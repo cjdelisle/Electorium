@@ -1,5 +1,5 @@
 
-use crate::{Vote, compute_winner};
+use crate::{Vote, VoteCounter};
 
 #[derive(Default)]
 struct Votes {
@@ -38,14 +38,53 @@ impl Votes {
         self.next_voter_id += 1;
     }
     fn expect_win(&self, winner: &str) {
-        println!("Computing winner for: {}", self.test_name);
-        let mut is = crate::logging_introspector::new();
-        let res = compute_winner(&self.v, &mut is);
-        if res == "" {
-            assert!(winner == "");
+        self.check_winner(Some(winner), true);
+    }
+    fn check_winner(&self, winner: Option<&str>, verbose: bool) {
+        let is = if verbose {
+            println!("Computing winner for: {}", self.test_name);
+            crate::logging_introspector::new()
         } else {
-            let winner = format!("{}/{}", self.test_name, winner);
-            assert_eq!(winner, res);
+            crate::Introspector::default()
+        };
+        let mut vc = VoteCounter::new(&self.v, is);
+        if verbose {
+            println!("Most possible votes per candidate:");
+            for (votes, v) in vc.iter() {
+                println!("  - {} possible votes to {}", votes, v.voter_id);
+            }
+        }
+        let win = vc.find_winner();
+        if let Some(win) = win {
+            if verbose {
+                println!("Projected winner is: {}", win.voter_id);
+            }
+            vc.revoke_vote(win);
+            if verbose {
+                println!("Total delegated votes with {}'s delegation removed:", win.voter_id);
+                for (votes, v) in vc.iter() {
+                    println!("  - {} possible votes to {}", votes, v.voter_id);
+                }
+            }
+            let mut top = 0;
+            for (votes, v) in vc.iter() {
+                let t = if top == 0 {
+                    top = votes;
+                    votes
+                } else {
+                    top
+                };
+                assert_eq!(t, votes);
+                if v == win {
+                    break;
+                }
+            }
+            if let Some(winner) = winner {
+                let winner = format!("{}/{}", self.test_name, winner);
+                assert_eq!(winner, win.voter_id);
+            }
+        } else if let Some(winner) = winner {
+            assert!(winner == "");
         }
     }
 }
@@ -75,7 +114,7 @@ fn test_alice_bob_charlie() {
     v.candidate("Alice", "Bob");
     v.candidate("Bob", "Alice");
     v.candidate("Charlie", "Alice");
-    v.votes("Bob", 2);
+    v.votes("Bob", 3);
     v.votes("Charlie", 4);
     v.expect_win("Alice");
 }
@@ -99,7 +138,23 @@ fn ernist_is_patron() {
     v.candidate("Charlie", "Alice");
     v.candidate("Dave", "Charlie");
     v.candidate("Ernist", "Dave");
-    v.votes("Bob", 1); //  bob only has 1 vote, now Alice only has 3 votes
-    v.votes("Ernist", 4);
+    v.votes("Bob", 1); //  bob only has 1 vote, now Alice only has 2 votes
+    v.votes("Ernist", 5);
     v.expect_win("Ernist");
+}
+
+#[test]
+fn tennassee_capital_election() {
+    let mut v = Votes::new("tennassee_capital_election");
+    v.candidate("Memphis", "Nashville");
+    v.candidate("Nashville", "Chattanooga");
+    v.candidate("Knoxville", "Chattanooga");
+    v.candidate("Chattanooga", "Knoxville");
+
+    v.votes("Memphis", 42_000);
+    v.votes("Nashville", 26_000);
+    v.votes("Knoxville", 15_000);
+    v.votes("Chattanooga", 17_000);
+
+    v.expect_win("Nashville");
 }

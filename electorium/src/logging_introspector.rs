@@ -5,7 +5,7 @@ use crate::introspector::{
     VoteDelegationRing,
     InvalidVote,
     InvalidVoteCause,
-    BestRings, BestOfRing,
+    BestRing, BestOfRing,
     PatronSelection, PatronSelectionReason,
     DeterministicTieBreaker,
     Winner,
@@ -55,14 +55,9 @@ pub fn new<'a>() -> Introspector<'a> {
                 format!("They voted for [{}] which is not a voter or candidate", e.vote.vote_for),
         });
     });
-    is.subscribe((), |(),e:&BestRings|{
+    is.subscribe((), |(),e:&BestRing|{
         println!("Tenative winner(s):");
         print_ring(&e.best_rings_members, e.best_total_delegated_votes);
-        if let Some(ru) = e.runner_up {
-            println!("Runner up: {} with {} votes", ru.voter_id, e.runner_up_score);
-        } else {
-            println!("No Runner up");
-        }
     });
     is.subscribe((), |(),e:&BestOfRing|{
         if e.rings_member_scores.len() < 2 {
@@ -76,19 +71,15 @@ pub fn new<'a>() -> Introspector<'a> {
             println!("    Multiple ({}) tied winners, patron selection will be skipped", e.winners.len());
         }
     });
-    let considering_patron = "".to_string();
-    is.subscribe(considering_patron, |considering_patron,e:&PatronSelection|{
-        if considering_patron != &e.candidate.voter_id {
-            *considering_patron = e.candidate.voter_id.clone();
-            println!("Considering possible Patrons for tenative winner: {} with ({} possible votes)",
-                e.candidate.voter_id, e.candidate_votes);
-        }
-        println!("    - {} (with {} possible votes): {}",
+    is.subscribe((), |(),e:&PatronSelection|{
+        println!("Possible patron: {} (with {} possible votes): {}",
             e.potential_patron.voter_id,
             e.potential_patron_votes,
             match &e.selection {
                 PatronSelectionReason::LoopCandidate => "NO - Already eliminated by Within-Ring Tie-Breaker".into(),
-                PatronSelectionReason::NotProvidingMajority => "NO - Does not provide majority of votes".into(),
+                PatronSelectionReason::NotProvidingMajority(mtb) => {
+                    format!("NO - Does not provide majority of votes, would need more than {mtb}")
+                }
                 PatronSelectionReason::NotWillingCandidate => "NO - Not a willing candidate".into(),
                 PatronSelectionReason::NotBeatingSecondBest(score, cand) => {
                     format!("NO - Can't defeat 2nd best ({} with {} possible votes)", cand.voter_id, score)

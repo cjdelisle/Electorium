@@ -53,23 +53,24 @@ voted for you.
 ## The Algorithm
 1. Compute the most votes that any candidate could possibly get - that is, perform
     all possible delegations for everyone.
-2. Identify the best and 2nd best rings. This is trivially done by finding the
-    candidates who are tied with the most potential votes, and those who are tied with
-    the 2nd most potential votes. Everyone in a ring will by definition be in a tie
-    because they are all sharing votes with eachother.
-3. For each candidate in the best ring, compute how many votes they would have
+2. Sort candidates by number of votes that they could possibly receive.
+3. Take all of the candidates who are tied for the "win", if there is only one then
+    they are the clear winner, but if the winner voted for someone who in turn voted
+    for them, then they will be tied because they are sharing all of their delegated
+    votes with one another. We refer to this as the "best ring".
+4. For each candidate in the best ring, compute how many votes they would have
     received if that ring did not exist (i.e. nobody in the ring had voted).
-    This candidate is the tenative winner, everyone else in the ring, and everybody
-    who did NOT delegate votes the tenative winner can be eliminated at this stage.
-4. If a majority of the tenative winner's votes came from/through one candidate
-    who voted for him (excluding the one who was in the ring), we might call this
-    candidate his "patron". Without his patron there is no way he could have won.
-    If the patron has, himself, more votes than the 2nd best ring, we consider the
-    patron to be the tenative winner. But if the patron also has a patron then we
-    recurse.
-5. Once the tenative winner has no patron who satisfies the requirements, we make him
-    the final winner. In case there are multiple candidates with the exact same
-    properties, we 
+    This candidate is the Tenative Winner.
+5. If a majority of the Tenative Winner's votes came from/through one candidate
+    who voted for him (excluding anyone who was in the ring), we might call this
+    candidate his "Patron". Without his Patron there is no way he could have won.
+    If the Patron has, himself, more votes than the 2nd best ring, we consider the
+    Patron to be the Tenative Winner. If the Patron also has a Patron then we
+    recurse. Note that to be the Patron of a Patron, one must have more than 50% of
+    the votes of the *original* Tenative Winner, Patron recursion does not work by simply
+    having more than 50% of the votes of the Patron.
+6. Once a Tenative Winner with no Patron has been identified, we call him the final
+    winner.
 
 ## Ties
 
@@ -77,9 +78,9 @@ There are two types of ties that we can have, each is broken in a different way.
 
 ### Within-Ring Ties
 
-It is possible that in stage 3, we identify multiple candidates who would have the
-exact same number of votes. If this happens then we need not care about patrons
-because neither patron of a tied winner can possibly win by revoking his vote,
+It is possible that in stage 4, we identify multiple candidates who would have the
+exact same number of votes. If this happens then we need not care about Patrons
+because neither Patron of a tied winner can possibly win by revoking his vote,
 because it would just cause the tie to be won by the other candidate.
 
 For example:
@@ -87,12 +88,12 @@ For example:
 * Barry gives 90 votes to Bob who gets a total of 110 votes
 
 Alan cannot win against Bob, and Barry cannot win against Alice, so in this case we
-do not compute patrons, we pick the winner from between Alice and Bob using a
+do not compute Patrons, we pick the winner from between Alice and Bob using a
 deterministic tie-breaker.
 
 The deterministic tie-breaker uses Blake2b-512 to hash the candidate's name/id
-concatnated with the total delegated votes they received (as little endian u64) and
-the lowest hash wins.
+concatnated with the maximum delegated votes they could receive (as little endian u64)
+and the lowest hash wins.
 
 ### Multi-Ring Ties
 It is possible that in stage 2, we identify multiple rings which have exactly the same

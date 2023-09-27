@@ -39,14 +39,11 @@ pub struct InvalidVote<'a> {
 impl<'a> Event<'a> for InvalidVote<'a> {}
 
 #[derive(Tid)]
-pub struct BestRings<'a> {
+pub struct BestRing<'a> {
     pub best_total_delegated_votes: u64,
     pub best_rings_members: Vec<Vec<&'a Vote>>,
-
-    pub runner_up: Option<&'a Vote>,
-    pub runner_up_score: u64,
 }
-impl<'a> Event<'a> for BestRings<'a> {}
+impl<'a> Event<'a> for BestRing<'a> {}
 
 #[derive(Tid)]
 pub struct BestOfRing<'a> {
@@ -63,7 +60,7 @@ pub enum PatronSelectionReason<'a> {
     NotWillingCandidate,
 
     /// The potential patron is not providing a majority of the votes to the candidate
-    NotProvidingMajority,
+    NotProvidingMajority(u64),
 
     /// The potential patron would not have enough votes to beat the second best ring,
     /// so since they can't beat second best, they lose and thus delegate their votes.
@@ -77,10 +74,6 @@ pub enum PatronSelectionReason<'a> {
 
 #[derive(Tid)]
 pub struct PatronSelection<'a> {
-    /// The candidate who we are checking for a patron of
-    pub candidate: &'a Vote,
-    /// The number ot total delegated votes that this candidate can amass
-    pub candidate_votes: u64,
     /// The potential patron whom we are considering
     pub potential_patron: &'a Vote,
     /// The total number of delegated votes of the potential patron
