@@ -211,7 +211,7 @@ fn get_best_candidates<'b, 'a: 'b>(
     cand: &'b Vec<Candidate<'a>>,
     best: usize,
     is: &mut Introspector<'a>,
-) -> HashMap<usize, &'b Candidate<'a>> {
+) -> (HashMap<usize, &'b Candidate<'a>>, usize) {
     let mut best_ring = HashMap::new();
     let mut c_idx = best;
     let score = cand[c_idx].total_indirect_votes;
@@ -227,13 +227,15 @@ fn get_best_candidates<'b, 'a: 'b>(
             break;
         }
     };
+    let best_rings_members = compute_ring_members(&best_ring);
+    let ring_count = best_rings_members.len();
     is.event(|| {
         BestRing{
             best_rings_members: compute_ring_members(&best_ring),
             best_total_delegated_votes: score,
         }
     });
-    best_ring
+    (best_ring, ring_count)
 }
 
 /// Get the best candidate(s) out of the ring, i.e. the one(s) who would have the most
@@ -507,12 +509,14 @@ impl<'a> VoteCounter<'a> {
                 return None
             }
         };
-        let best_ring = get_best_candidates(&self.cand, best, &mut self.is);
+        let (best_ring, ring_count) = get_best_candidates(&self.cand, best, &mut self.is);
 
         // 4. Get the best candidate out of the best ring
-        let tenative_winner = best_of_ring(&self.cand, &best_ring, &mut self.is);
-    
-        let tenative_winner = solve_winner(&self.cand, tenative_winner, &best_ring, &mut self.is);
+        let mut tenative_winner = best_of_ring(&self.cand, &best_ring, &mut self.is);
+
+        if ring_count < 2 {
+            tenative_winner = solve_winner(&self.cand, tenative_winner, &best_ring, &mut self.is);
+        }
     
         // 6. In case of a tie, resolve 
         let winner = tie_breaker(&tenative_winner, &mut self.is);

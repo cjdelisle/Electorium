@@ -83,7 +83,7 @@ fn main() {
             if best_score == 0 {
                 best_score = score;
             } else if score < best_score {
-                println!("Projected winner: {} does not have the best score {}", win.voter_id, vote.voter_id);
+                println!("Projected winner: {} does not have the best score", win.voter_id);
                 panic!("Projected winner does not have the best score");
             }
             if vote == win {
