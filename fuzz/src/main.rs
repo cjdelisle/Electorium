@@ -9,7 +9,7 @@ const VOTE_WIDTH: usize = 6;
 
 #[inline]
 fn mk_id(input: u16) -> (String, bool) {
-    if input < 0x8000 {
+    if input > 0x8000 {
         (format!("voter/{input:04x}"), false)
     } else {
         (format!("cand/{input:04x}"), true)
