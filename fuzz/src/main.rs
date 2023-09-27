@@ -50,18 +50,26 @@ fn main() {
         let votes = mk_votes(data);
         let is = Introspector::default();
         let mut vc = VoteCounter::new(&votes, is);
+        // for (score, vote) in vc.iter() {
+        //     println!("1. Cand: {} with votes {}", vote.voter_id, score);
+        // }
         let win = match vc.find_winner() {
             None => { return; },
             Some(win) => win,
         };
         vc.revoke_vote(win);
+        // for (score, vote) in vc.iter() {
+        //     println!("2. Cand: {} with votes {}", vote.voter_id, score);
+        // }
         let mut best_score = 0;
         for (score, vote) in vc.iter() {
             if best_score == 0 {
                 best_score = score;
             } else if score < best_score {
-                panic!("Projected winner: {} does not have the best score {}", win.voter_id, vote.voter_id);
-            } else if vote == win {
+                println!("Projected winner: {} does not have the best score {}", win.voter_id, vote.voter_id);
+                panic!("Projected winner does not have the best score");
+            }
+            if vote == win {
                 return;
             }
         }
