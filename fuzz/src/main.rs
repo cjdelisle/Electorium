@@ -46,21 +46,33 @@ fn mk_votes(data: &[u8]) -> Vec<Vote> {
 }
 
 fn main() {
+    let verbose = std::env::args().any(|a|a == "-v");
     fuzz!(|data: &[u8]| {
         let votes = mk_votes(data);
         let is = Introspector::default();
         let mut vc = VoteCounter::new(&votes, is);
-        // for (score, vote) in vc.iter() {
-        //     println!("1. Cand: {} with votes {}", vote.voter_id, score);
-        // }
+        if verbose {
+            println!("Votes:");
+            for v in &votes {
+                println!("  - {} with {} votes --> {}", v.voter_id, v.number_of_votes, v.vote_for);
+            }
+            println!("Initial Scoring:");
+            for (score, vote) in vc.iter() {
+                println!("  - {} max possible score: {}", vote.voter_id, score);
+            }
+        }
         let win = match vc.find_winner() {
             None => { return; },
             Some(win) => win,
         };
         vc.revoke_vote(win);
-        // for (score, vote) in vc.iter() {
-        //     println!("2. Cand: {} with votes {}", vote.voter_id, score);
-        // }
+        if verbose {
+            println!("Winner identified: {}", win.voter_id);
+            println!("With winner's vote revoked:");
+            for (score, vote) in vc.iter() {
+                println!("  - {} with votes {}", vote.voter_id, score);
+            }
+        }
         let mut best_score = 0;
         for (score, vote) in vc.iter() {
             if best_score == 0 {
