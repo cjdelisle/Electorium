@@ -2,6 +2,7 @@ use afl::fuzz;
 use electorium::VoteCounter;
 use electorium::Vote;
 use electorium::introspector::Introspector;
+use electorium::logging_introspector;
 
 // Data Shape:
 // [u16 VoterID][u16 Votes][u16 VoteForID]
@@ -49,7 +50,11 @@ fn main() {
     let verbose = std::env::args().any(|a|a == "-v");
     fuzz!(|data: &[u8]| {
         let votes = mk_votes(data);
-        let is = Introspector::default();
+        let is = if verbose {
+            logging_introspector::new()
+        } else {
+            Introspector::default()
+        };
         let mut vc = VoteCounter::new(&votes, is);
         if verbose {
             println!("Votes:");

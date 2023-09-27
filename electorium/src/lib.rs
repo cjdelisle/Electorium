@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 mod types;
 pub mod introspector;
-mod logging_introspector;
+pub mod logging_introspector;
 #[cfg(test)]
 mod tests;
 
