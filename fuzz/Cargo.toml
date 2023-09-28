@@ -1,10 +1,28 @@
 [package]
-name = "fuzz"
-version = "0.1.0"
+name = "electorium-fuzz"
+version = "0.0.0"
+publish = false
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[package.metadata]
+cargo-fuzz = true
 
 [dependencies]
-afl = "*"
-electorium = { path = "../electorium" }
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+
+[dependencies.electorium]
+path = ".."
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "fuzz_target_1"
+path = "fuzz_targets/fuzz_target_1.rs"
+test = false
+doc = false
