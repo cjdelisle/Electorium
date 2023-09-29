@@ -1,5 +1,5 @@
 [package]
-name = "fuzz"
+name = "fuzz-afl"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,4 +7,12 @@ edition = "2021"
 
 [dependencies]
 afl = "*"
-electorium = { path = "../electorium" }
+electorium = { path = ".." }
+
+[[bin]]
+name = "fuzz-afl"
+path = "src/fuzz.rs"
+
+[[bin]]
+name = "compile-case"
+path = "src/compile.rs"

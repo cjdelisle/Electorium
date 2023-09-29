@@ -1,0 +1,11 @@
+# In this case, Charlie *would* be the Patron of Bob,
+# but because there's a close runner-up, he can't win.
+
+Bob 1 Alice
+Alice 1 Bob
+Charlie 6 Bob
+David 1 Alice
+
+Barry 1 Alan
+Alan 1 Barry
+Chris 6 Barry

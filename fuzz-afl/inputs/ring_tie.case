@@ -1,0 +1,5 @@
+# This case creates a ring-tie between Alice and Bob
+# In this case, the only solution is to break the tie with the deterministic tie breaker.
+
+Alice 4 Bob
+Bob 4 Alice
