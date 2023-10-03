@@ -51,7 +51,7 @@ impl<'a> PartialEq for Candidate<'a> {
 fn mk_candidates<'a, 'b: 'a>(
     votes: &'b[Vote],
     cands: &mut Vec<Candidate<'a>>,
-    is: &mut Introspector<'b>,
+    is: &mut Introspector<'a>,
 ) -> usize {
     let mut candidate_idx_by_name = HashMap::with_capacity(votes.len());
     let mut total_willing = 0;
@@ -63,6 +63,10 @@ fn mk_candidates<'a, 'b: 'a>(
                 // order_by_total_indirect
                 continue;
             }
+			if candidate_idx_by_name.contains_key(&v.voter_id) {
+				is.event(||InvalidVote{ cause: InvalidVoteCause::Duplicate, vote: v });
+				continue;
+			}
             total_willing += if willing { 1 } else { 0 };
             let cand = Candidate{
                 vote: v,

@@ -30,6 +30,7 @@ pub enum InvalidVoteCause {
     NoVote,
     SelfVote,
     UnrecognizedVote,
+    Duplicate,
 }
 
 #[derive(Tid)]

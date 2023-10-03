@@ -50,11 +50,13 @@ pub fn new<'a>() -> Introspector<'a> {
         println!("    Stop at: {}", e.next.voter_id);
     });
     is.subscribe((), |(),e:&InvalidVote|{
-        println!("Discarding vote from {} because: {:?}", e.vote.voter_id, match e.cause {
+        println!("Discarding vote from {}/{} because: {:?}",
+            e.vote.voter_id, e.vote.number_of_votes, match e.cause {
             InvalidVoteCause::NoVote => "They didn't vote for anyone".into(),
             InvalidVoteCause::SelfVote => "They voted for themselves".into(),
             InvalidVoteCause::UnrecognizedVote =>
                 format!("They voted for [{}] which is not a voter or candidate", e.vote.vote_for),
+            InvalidVoteCause::Duplicate => "Duplicate voter".into(),
         });
     });
     is.subscribe((), |(),e:&BestRing|{
