@@ -181,43 +181,50 @@ fn order_by_total_indirect<'b,'a:'b>(
 }
 
 /// A "ring" is potentially more than one ring, this breaks it down into the component rings.
-fn compute_ring_members<'b, 'a: 'b>(ring: &HashMap<usize, &'b Candidate<'a>>) -> Vec<Vec<&'a Vote>> {
+fn compute_ring_members<'b, 'a: 'b>(
+    cand: &'b Vec<Candidate<'a>>,
+    ring: &HashMap<usize, &'b Candidate<'a>>,
+) -> Vec<Vec<&'a Vote>> {
     let mut out: Vec<Vec<&Vote>> = Vec::new();
-    'outer: for (_, &c) in ring {
-        for r in &mut out {
-            if r.contains(&c.vote) {
-                continue 'outer;
-            }
-            // In the event that there's a candidate with ZERO votes (they have no coins)
-            // but they got 1 vote from another candidate who is 
-            if let Some(vf_id) = c.vote_for {
-                if let Some(vf) = ring.get(&vf_id) {
-                    if r.contains(&vf.vote) {
-                        r.push(c.vote);
-                        continue 'outer;
+    let mut unorganized = HashMap::new();
+    for (k, v) in ring {
+        unorganized.insert(k, v);
+    }
+    loop {
+        let mut ring = Vec::new();
+        let (idx, _) = match unorganized.iter().next() {
+            Some(x) => x,
+            None => break,
+        };
+        let mut maybe_idx = Some(**idx);
+        let mut orig_c = None;
+        while let Some(idx) = maybe_idx {
+            match unorganized.remove(&idx) {
+                Some(c) => {
+                    ring.push(c);
+                    if orig_c.is_none() {
+                        orig_c = Some(c);
                     }
+                    maybe_idx = c.vote_for;
                 }
-            }
-        }
-        let mut real_ring = Vec::new();
-        let mut x = c;
-        loop {
-            if real_ring.contains(&x.vote) {
-                break;
-            }
-            real_ring.push(x.vote);
-            if let Some(next_id) = x.vote_for {
-                if let Some(next) = ring.get(&next_id) {
-                    x = next;
-                } else {
-                    // incomplete ring
+                None => {
+                    assert!(ring.contains(&&&cand[idx]) || !cand[idx].is_willing_candidate);
                     break;
                 }
-            } else {
-                break;
             }
         }
-        out.push(real_ring);
+        if let Some(&c) = orig_c {
+            let mut maybe_vfm = c.voted_for_me;
+            while let Some(vfm) = maybe_vfm {
+                if let Some(vfm_c) = unorganized.remove(&vfm) {
+                    ring.push(vfm_c);
+                    maybe_vfm = vfm_c.voted_for_me;
+                } else {
+                    maybe_vfm = cand[vfm].voting_for_same;
+                }
+            }
+        }
+        out.push(ring.iter().map(|c|c.vote).collect());
     }
     out
 }
@@ -243,11 +250,11 @@ fn get_best_candidates<'b, 'a: 'b>(
             break;
         }
     };
-    let best_rings_members = compute_ring_members(&best_ring);
+    let best_rings_members = compute_ring_members(cand, &best_ring);
     let ring_count = best_rings_members.len();
     is.event(|| {
         BestRing{
-            best_rings_members: compute_ring_members(&best_ring),
+            best_rings_members: compute_ring_members(cand, &best_ring),
             best_total_delegated_votes: score,
         }
     });
