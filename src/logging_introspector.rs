@@ -9,6 +9,7 @@ use crate::introspector::{
     BestRing, BestOfRing,
     PatronSelection, PatronSelectionReason,
     DeterministicTieBreaker,
+    DeterministicTieBreakerHash,
     Winner,
 };
 
@@ -89,13 +90,24 @@ pub fn new<'a>() -> Introspector<'a> {
             }
         );
     });
+    is.subscribe((), |(), e:&DeterministicTieBreakerHash|{
+        print!("Deterministic Tie Breaker Hash: {} w/ {} -> ",
+            e.candidate, e.total_indirect_votes);
+        for b in &e.bytes {
+            print!("{:02x}", b);
+        }
+        println!("");
+    });
     is.subscribe((), |(),e:&DeterministicTieBreaker|{
         println!("Deterministic Tie Breaker:");
         for (v, hash) in &e.tied_candidates {
             let mut hash8 = [0_u8; 8];
             hash8.copy_from_slice(&hash[..8]);
-            println!("    - Hash {:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x} for {}",
-                hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7], v.voter_id);
+            print!("    - Hash ");
+            for b in hash {
+                print!("{:02x}", b);
+            }
+            println!(" for {}", v.voter_id);
         }
     });
     is.subscribe((), |(), e:&Option<Winner>|{

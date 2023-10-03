@@ -18,6 +18,7 @@ use introspector::{
     BestRing, BestOfRing,
     PatronSelection, PatronSelectionReason,
     DeterministicTieBreaker,
+    DeterministicTieBreakerHash,
     Winner,
 };
 
@@ -440,12 +441,24 @@ fn solve_winner<'b, 'a: 'b>(
     ]
 }
 
-fn tie_breaker_hash(c: &Candidate, name: &str) -> [u8; 64] {
+fn tie_breaker_hash<'a>(c: &Candidate, name: &str, is: &mut Introspector<'a>) -> [u8; 64] {
     use blake2::{Blake2b512, Digest};
     let mut hasher = Blake2b512::new();
     hasher.update(name.as_bytes());
     hasher.update(c.total_indirect_votes.to_le_bytes());
-    hasher.finalize().into()
+    let hash = hasher.finalize().into();
+    is.event(||{
+        let nab = name.as_bytes();
+        let mut buf = vec![0_u8; nab.len() + 8];
+        buf[0..nab.len()].copy_from_slice(nab);
+        buf[nab.len()..].copy_from_slice(&c.total_indirect_votes.to_le_bytes()[..]);
+        DeterministicTieBreakerHash{
+            candidate: name.to_string(),
+            total_indirect_votes: c.total_indirect_votes,
+            bytes: buf,
+        }
+    });
+    hash
 }
 
 fn tie_breaker<'b, 'a: 'b>(
@@ -458,7 +471,7 @@ fn tie_breaker<'b, 'a: 'b>(
         _ => {
             let mut wh = winners.iter()
                 .map(|&w|{
-                    let hash = tie_breaker_hash(w, &w.vote.voter_id);
+                    let hash = tie_breaker_hash(w, &w.vote.voter_id, is);
                     (hash, w)
                 })
                 .collect::<Vec<_>>();

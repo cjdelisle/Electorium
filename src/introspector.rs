@@ -96,6 +96,17 @@ pub struct DeterministicTieBreaker<'a> {
 impl<'a> Event<'a> for DeterministicTieBreaker<'a> {}
 
 #[derive(Tid)]
+pub struct DeterministicTieBreakerHash {
+    /// The candidate's ID
+    pub candidate: String,
+    /// The bytes which are hashed for the candidate
+    pub bytes: Vec<u8>,
+    /// Total number of possible indirect votes
+    pub total_indirect_votes: u64,
+}
+impl<'a> Event<'a> for DeterministicTieBreakerHash {}
+
+#[derive(Tid)]
 pub struct Winner<'a> {
     /// The candidate who finally won
     pub candidate: &'a Vote,
