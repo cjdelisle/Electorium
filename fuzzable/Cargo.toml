@@ -1,19 +1,16 @@
 [package]
-name = "fuzz-afl"
+name = "fuzzable"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+crate-type = [ "lib", "staticlib" ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-afl = "*"
 electorium = { path = ".." }
-fuzzable = { path = "../fuzzable" }
 
-[[bin]]
-name = "fuzz-afl"
-path = "src/fuzz.rs"
-
-[[bin]]
-name = "compile-case"
-path = "src/compile.rs"
+[build-dependencies]
+cbindgen = "0.26.0"
+anyhow = "1"

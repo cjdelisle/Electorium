@@ -2,3 +2,4 @@
 /fuzz-afl/target
 /fuzz-afl/inputs-compiled
 /fuzz-afl/outputs
+/fuzzable/target

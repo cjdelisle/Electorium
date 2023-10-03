@@ -112,3 +112,6 @@ even amongst members of different rings, and this is settled in the normal way.
 NOTE: If we encounter a multi-ring tie, we do NOT search for Patrons because the Patron
 of the candidates in one ring is not the Patron of the nodes in any other ring, so to
 allow the Patron to win would cause the nodes in the other ring to erroniously lose.
+
+## License
+MIT OR ISC at your preference
