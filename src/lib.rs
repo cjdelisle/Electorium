@@ -184,9 +184,19 @@ fn order_by_total_indirect<'b,'a:'b>(
 fn compute_ring_members<'b, 'a: 'b>(ring: &HashMap<usize, &'b Candidate<'a>>) -> Vec<Vec<&'a Vote>> {
     let mut out: Vec<Vec<&Vote>> = Vec::new();
     'outer: for (_, &c) in ring {
-        for r in &out {
+        for r in &mut out {
             if r.contains(&c.vote) {
                 continue 'outer;
+            }
+            // In the event that there's a candidate with ZERO votes (they have no coins)
+            // but they got 1 vote from another candidate who is 
+            if let Some(vf_id) = c.vote_for {
+                if let Some(vf) = ring.get(&vf_id) {
+                    if r.contains(&vf.vote) {
+                        r.push(c.vote);
+                        continue 'outer;
+                    }
+                }
             }
         }
         let mut real_ring = Vec::new();
