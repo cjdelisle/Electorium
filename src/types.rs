@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR ISC
 #[derive(Debug)]
 pub struct Vote {
     /// The unique ID of the voter/candidate

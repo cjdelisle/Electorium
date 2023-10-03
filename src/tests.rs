@@ -1,4 +1,4 @@
-
+// SPDX-License-Identifier: MIT OR ISC
 use crate::{Vote, VoteCounter};
 
 #[derive(Default)]

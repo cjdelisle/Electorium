@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR ISC
 #![allow(non_camel_case_types)] // better_any derive needs this
 
 use std::{collections::HashMap, marker::PhantomData};

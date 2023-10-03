@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR ISC
 use crate::types::Vote;
 use crate::introspector::{
     Introspector,
