@@ -78,7 +78,8 @@ fn mk_candidates<'a, 'b: 'a>(
             cands.push(cand);
         }
     }
-    for (c, vote) in cands.iter_mut().zip(votes.iter()) {
+    for c in cands.iter_mut() {
+        let vote = c.vote;
         if vote.vote_for == "" {
             // They didn't vote
             is.event(||InvalidVote{ cause: InvalidVoteCause::NoVote, vote });
