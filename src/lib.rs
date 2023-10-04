@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT OR ISC
 
 use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 mod types;
 pub mod introspector;
@@ -183,10 +184,10 @@ fn order_by_total_indirect<'b,'a:'b>(
 /// A "ring" is potentially more than one ring, this breaks it down into the component rings.
 fn compute_ring_members<'b, 'a: 'b>(
     cand: &'b Vec<Candidate<'a>>,
-    ring: &HashMap<usize, &'b Candidate<'a>>,
+    ring: &BTreeMap<usize, &'b Candidate<'a>>,
 ) -> Vec<Vec<&'a Vote>> {
     let mut out: Vec<Vec<&Vote>> = Vec::new();
-    let mut unorganized = HashMap::new();
+    let mut unorganized = BTreeMap::new();
     for (k, v) in ring {
         unorganized.insert(k, v);
     }
@@ -234,8 +235,8 @@ fn get_best_candidates<'b, 'a: 'b>(
     cand: &'b Vec<Candidate<'a>>,
     best: usize,
     is: &mut Introspector<'a>,
-) -> (HashMap<usize, &'b Candidate<'a>>, usize) {
-    let mut best_ring = HashMap::new();
+) -> (BTreeMap<usize, &'b Candidate<'a>>, usize) {
+    let mut best_ring = BTreeMap::new();
     let mut c_idx = best;
     let score = cand[c_idx].total_indirect_votes;
     loop {
@@ -265,7 +266,7 @@ fn get_best_candidates<'b, 'a: 'b>(
 /// votes if the ring did not exist. Returns multiple in case of a tie.
 fn best_of_ring<'b, 'a: 'b>(
     cand: &'b Vec<Candidate<'a>>,
-    ring: &HashMap<usize, &'b Candidate<'a>>,
+    ring: &BTreeMap<usize, &'b Candidate<'a>>,
     is: &mut Introspector<'a>,
 ) -> Vec<&'b Candidate<'a>> {
     let mut scores = Vec::new();
@@ -317,7 +318,7 @@ fn mk_patron_selection<'a>(
 fn get_runner_up<'b, 'a: 'b>(
     cand: &'b Vec<Candidate<'a>>,
     tenative_winner: &'b Candidate<'a>,
-    exclude_ring: &HashMap<usize, &'b Candidate<'a>>,
+    exclude_ring: &BTreeMap<usize, &'b Candidate<'a>>,
 ) -> Option<&'b Candidate<'a>> {
     let mut ru_id = tenative_winner.next_by_total_indirect_votes;
     while let Some(id) = ru_id {
@@ -340,7 +341,7 @@ fn get_runner_up<'b, 'a: 'b>(
 fn get_patron<'b, 'a: 'b>(
     cand: &'b Vec<Candidate<'a>>,
     tenative_winner: &'b Candidate<'a>,
-    exclude_ring: &HashMap<usize, &'b Candidate<'a>>,
+    exclude_ring: &BTreeMap<usize, &'b Candidate<'a>>,
     is: &mut Introspector<'a>,
 ) -> Option<&'b Candidate<'a>> {
 
@@ -433,7 +434,7 @@ fn get_patron<'b, 'a: 'b>(
 fn solve_winner<'b, 'a: 'b>(
     cand: &'b Vec<Candidate<'a>>,
     tenative_winner: Vec<&'b Candidate<'a>>,
-    best_ring: &HashMap<usize, &'b Candidate<'a>>,
+    best_ring: &BTreeMap<usize, &'b Candidate<'a>>,
     is: &mut Introspector<'a>,
 ) -> Vec<&'b Candidate<'a>> {
 
