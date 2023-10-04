@@ -181,14 +181,31 @@ fn order_by_total_indirect<'b,'a:'b>(
     None
 }
 
+fn push_vfm<'b, 'a: 'b>(
+    cand: &'b Vec<Candidate<'a>>,
+    me: &'b Candidate<'a>,
+    unorganized: &mut BTreeMap<usize, &'b Candidate<'a>>,
+    ring: &mut Vec<&'b Candidate<'a>>,
+) {
+    let mut maybe_vfm = me.voted_for_me;
+    while let Some(vfm) = maybe_vfm {
+        if let Some(vfm_c) = unorganized.remove(&vfm) {
+            // println!("Pushing candidate {} to ring", vfm_c.vote.voter_id);
+            ring.push(vfm_c);
+            push_vfm(cand, vfm_c, unorganized, ring);
+        }
+        maybe_vfm = cand[vfm].voting_for_same;
+    }
+}
+
 /// A "ring" is potentially more than one ring, this breaks it down into the component rings.
 fn compute_ring_members<'b, 'a: 'b>(
     cand: &'b Vec<Candidate<'a>>,
     ring: &BTreeMap<usize, &'b Candidate<'a>>,
 ) -> Vec<Vec<&'a Vote>> {
     let mut out: Vec<Vec<&Vote>> = Vec::new();
-    let mut unorganized = BTreeMap::new();
-    for (k, v) in ring {
+    let mut unorganized: BTreeMap<usize, &'b Candidate<'a>> = BTreeMap::new();
+    for (&k, &v) in ring {
         unorganized.insert(k, v);
     }
     loop {
@@ -197,31 +214,22 @@ fn compute_ring_members<'b, 'a: 'b>(
             Some(x) => x,
             None => break,
         };
-        let mut maybe_idx = Some(**idx);
-        let mut orig_c = None;
+        let mut maybe_idx = Some(*idx);
         while let Some(idx) = maybe_idx {
             match unorganized.remove(&idx) {
                 Some(c) => {
+                    // println!("Pushing candidate {}/{} to ring {}",
+                    //     cand[idx].vote.voter_id, idx, out.len());
                     ring.push(c);
-                    if orig_c.is_none() {
-                        orig_c = Some(c);
-                    }
+                    push_vfm(cand, c, &mut unorganized, &mut ring);
                     maybe_idx = c.vote_for;
                 }
                 None => {
-                    assert!(ring.contains(&&&cand[idx]) || !cand[idx].is_willing_candidate);
+                    if !ring.contains(&&cand[idx]) && cand[idx].is_willing_candidate {
+                        panic!("Candidate: {}/{} is not in unorganized nor in ring",
+                            cand[idx].vote.voter_id, idx);
+                    }
                     break;
-                }
-            }
-        }
-        if let Some(&c) = orig_c {
-            let mut maybe_vfm = c.voted_for_me;
-            while let Some(vfm) = maybe_vfm {
-                if let Some(vfm_c) = unorganized.remove(&vfm) {
-                    ring.push(vfm_c);
-                    maybe_vfm = vfm_c.voted_for_me;
-                } else {
-                    maybe_vfm = cand[vfm].voting_for_same;
                 }
             }
         }
@@ -251,6 +259,10 @@ fn get_best_candidates<'b, 'a: 'b>(
             break;
         }
     };
+    println!("Best ring contains:");
+    for (&k, &v) in &best_ring {
+        println!("  - {}/{}", v.vote.voter_id, k);
+    }
     let best_rings_members = compute_ring_members(cand, &best_ring);
     let ring_count = best_rings_members.len();
     is.event(|| {
