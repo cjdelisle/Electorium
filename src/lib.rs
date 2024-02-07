@@ -593,8 +593,14 @@ impl<'a> VoteCounter<'a> {
 
     /// Get an iterator which yields the candidates in order by number of votes they would
     /// receive with all possible delegations.
-    pub fn iter<'b>(&'b self) -> impl Iterator<Item = (u64, &'a Vote)> + 'b {
+    pub fn candidates<'b>(&'b self) -> impl Iterator<Item = (u64, &'a Vote)> + 'b {
         WinnersIter{ vc: self, next: self.best }
+    }
+
+    /// Get an iterator which yields the voters with the maximum number of votes they could
+    /// possibly receive. This is not ordered.
+    pub fn all_voters<'b>(&'b self) -> impl Iterator<Item = (u64, &'a Vote)> + 'b {
+        VotersIter{ vc: self, idx: 0 }
     }
 }
 
