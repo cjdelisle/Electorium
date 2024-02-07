@@ -614,3 +614,20 @@ impl<'a, 'b> Iterator for WinnersIter<'a, 'b> {
         }
     }
 }
+
+struct VotersIter<'a, 'b> {
+    vc: &'b VoteCounter<'a>,
+    idx: usize,
+}
+impl<'a, 'b> Iterator for VotersIter<'a, 'b> {
+    type Item = (u64, &'a Vote);
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx < self.vc.cand.len() {
+            let cand = &self.vc.cand[self.idx];
+            self.idx += 1;
+            Some((cand.total_indirect_votes, cand.vote))
+        } else {
+            None
+        }
+    }
+}
